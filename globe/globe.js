@@ -15,7 +15,7 @@ var DAT = DAT || {};
 
 DAT.Globe = function(container, opts) {
   opts = opts || {};
-  
+
   var colorFn = opts.colorFn || function(x) {
     var c = new THREE.Color();
     c.setHSL( ( 0.6 - ( x * 0.5 ) ), 1.0, 0.5 );
@@ -217,6 +217,30 @@ DAT.Globe = function(container, opts) {
 
   };
 
+  var boxGeometry = new THREE.BoxGeometry( 1, 1, 1 );
+  var boxMaterial = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
+
+  function addDataPoint(lat, lng, opts) {
+    var boxMesh = new THREE.Mesh( boxGeometry, boxMaterial.clone() );
+
+    var phi = (90 - lat) * Math.PI / 180;
+    var theta = (180 - lng) * Math.PI / 180;
+
+    boxMesh.position.x = 200 * Math.sin(phi) * Math.cos(theta);
+    boxMesh.position.y = 200 * Math.cos(phi);
+    boxMesh.position.z = 200 * Math.sin(phi) * Math.sin(theta);
+
+    boxMesh.scale.z = Math.random() * 500 +1;
+
+    boxMesh.lookAt(mesh.position);
+
+    //boxMesh.scale.z = Math.max( size, 0.1 ); // avoid non-invertible matrix
+    boxMesh.updateMatrix();
+
+    scene.add( boxMesh );
+  };
+  this.addDataPoint = addDataPoint;
+
   function createPoints() {
     if (this._baseGeometry !== undefined) {
       if (this.is_animated === false) {
@@ -375,6 +399,7 @@ DAT.Globe = function(container, opts) {
   });
 
   this.__defineSetter__('time', function(t) {
+    /*
     var validMorphs = [];
     var morphDict = this.points.morphTargetDictionary;
     for(var k in morphDict) {
@@ -395,6 +420,7 @@ DAT.Globe = function(container, opts) {
       this.points.morphTargetInfluences[lastIndex] = 1 - leftover;
     }
     this.points.morphTargetInfluences[index] = leftover;
+    */
     this._time = t;
   });
 
