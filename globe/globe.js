@@ -220,8 +220,41 @@ DAT.Globe = function(container, opts) {
   var boxGeometry = new THREE.BoxGeometry( 1, 1, 1 );
   var boxMaterial = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
 
+  var points = {};
+
+  function roundCoord(coord) {
+    return parseFloat(Math.round(coord).toFixed(2));
+  };
+
+  function createPointKey(lat, lng){
+    return lat + ":" + lng;
+  };
+
   function addDataPoint(lat, lng, opts) {
+
+    opts               = opts || {};
+    opts.height        = opts.height || 1;
+    opts.minHeight     = opts.minHeight || 0.1;
+    opts.speed         = opts.speed || 1;
+    opts.onPointUpdate = opts.onPointUpdate || function(point) {};
+
+    lat = roundCoord(lat);
+    lng = roundCoord(lng);
+
+    var pointKey      = createPointKey(lat, lng);
+    var existingPoint = points[pointKey];
+    if (existingPoint) {
+      updateExistingPoint(existingPoint);
+    } else {
+      points[pointKey] = createNewPoint(lat, lng, opts);
+    }
+  };
+  this.addDataPoint = addDataPoint;
+
+  function createNewPoint(lat, lng, opts) {
     var boxMesh = new THREE.Mesh( boxGeometry, boxMaterial.clone() );
+
+    var minHeight = opts;
 
     var phi = (90 - lat) * Math.PI / 180;
     var theta = (180 - lng) * Math.PI / 180;
@@ -230,16 +263,37 @@ DAT.Globe = function(container, opts) {
     boxMesh.position.y = 200 * Math.cos(phi);
     boxMesh.position.z = 200 * Math.sin(phi) * Math.sin(theta);
 
-    boxMesh.scale.z = Math.random() * 500 +1;
-
     boxMesh.lookAt(mesh.position);
 
-    //boxMesh.scale.z = Math.max( size, 0.1 ); // avoid non-invertible matrix
+    boxMesh.scale.z = Math.max( opts.height, opts.minHeight ); // avoid non-invertible matrix
     boxMesh.updateMatrix();
 
     scene.add( boxMesh );
-  };
-  this.addDataPoint = addDataPoint;
+
+    var tween = createTweenForMesh(boxMesh, opts)//.start();
+    tween.start();
+
+    return {
+      mesh: boxMesh,
+      tween: tween,
+    };
+  }
+
+  function updateExistingPoint(point, opts) {
+    point.tween.stop();
+
+    //TODO raise height and create new tween
+  }
+
+  function createTweenForMesh(boxMesh, opts) {
+    return new TWEEN.Tween(boxMesh.scale)
+    .to({ z: opts.minHeight }, boxMesh.scale.z * opts.height)
+    .easing(TWEEN.Easing.Bounce.Out)
+    .onUpdate(function() {
+      //Update color using "opts.onPointUpdate"
+    });
+  }
+
 
   function createPoints() {
     if (this._baseGeometry !== undefined) {
@@ -371,6 +425,7 @@ DAT.Globe = function(container, opts) {
 
   function animate() {
     requestAnimationFrame(animate);
+    TWEEN.update();
     render();
   }
 

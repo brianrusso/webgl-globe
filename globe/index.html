@@ -125,7 +125,7 @@
 
   <script type="text/javascript" src="/globe/third-party/Detector.js"></script>
   <script type="text/javascript" src="/globe/third-party/three.min.js"></script>
-  <script type="text/javascript" src="/globe/third-party/Tween.js"></script>
+  <script type="text/javascript" src="/globe/third-party/tween.min.js"></script>
   <script type="text/javascript" src="/globe/globe.js"></script>
   <script type="text/javascript">
 
@@ -142,7 +142,7 @@
 
       var settime = function(globe, t) {
         return function() {
-          new TWEEN.Tween(globe).to({time: t/years.length},500).easing(TWEEN.Easing.Cubic.EaseOut).start();
+          //new TWEEN.Tween(globe).to({time: t/years.length},500).easing(TWEEN.Easing.Cubic.EaseOut).start();
           var y = document.getElementById('year'+years[t]);
           if (y.getAttribute('class') === 'year active') {
             return;
@@ -161,7 +161,7 @@
       }
 
       var xhr;
-      TWEEN.start();
+      //TWEEN.start();
 
 
       xhr = new XMLHttpRequest();
@@ -174,7 +174,7 @@
             var count = 0;
             for (i=0;i<data[0][1].length;i += 3) {
               //globe.addData(data[i][1], {format: 'magnitude', name: data[i][0], animated: true});
-              globe.addDataPoint(data[0][1][i], data[0][1][i+1]);
+              globe.addDataPoint(data[0][1][i], data[0][1][i+1], {height: Math.random()*100+1});
               count++;
                if (count > 2000) break;
             }
