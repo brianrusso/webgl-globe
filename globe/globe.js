@@ -234,9 +234,17 @@ DAT.Globe = function(container, opts) {
 
     opts               = opts || {};
     opts.height        = opts.height || 1;
-    opts.minHeight     = opts.minHeight || 0.1;
+    opts.minHeight     = opts.minHeight || 0.1; //TODO make instance variable for globe
+    opts.maxHeight     = opts.maxHeight || 180; //TODO make instance variable for globe
     opts.speed         = opts.speed || 1;
-    opts.onPointUpdate = opts.onPointUpdate || function(point) {};
+
+    if (opts.height > opts.maxHeight)
+      opts.height = opts.maxHeight;
+
+    opts.onPointAge = opts.onPointAge || function(point) {
+      var height = point.scale.z;
+      point.material.color.setHSL( (1 - (height / opts.maxHeight)) * 0.66, 1, 0.5);
+    };
 
     lat = roundCoord(lat);
     lng = roundCoord(lng);
@@ -253,8 +261,6 @@ DAT.Globe = function(container, opts) {
 
   function createNewPoint(lat, lng, opts) {
     var boxMesh = new THREE.Mesh( boxGeometry, boxMaterial.clone() );
-
-    var minHeight = opts;
 
     var phi = (90 - lat) * Math.PI / 180;
     var theta = (180 - lng) * Math.PI / 180;
@@ -290,7 +296,8 @@ DAT.Globe = function(container, opts) {
     .to({ z: opts.minHeight }, boxMesh.scale.z * opts.height)
     .easing(TWEEN.Easing.Bounce.Out)
     .onUpdate(function() {
-      //Update color using "opts.onPointUpdate"
+      opts.onPointAge(boxMesh);
+      //Update color using "opts.onPointAge"
     });
   }
 
