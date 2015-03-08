@@ -319,7 +319,6 @@ DAT.Globe = function(container, opts) {
       opts.onPointUpdated(point.mesh);
     })
     .onComplete(function() {
-      point.tween.stop();
       point.tween = createAgeTweenForMesh(point.mesh, opts);
       point.tween.start();
     });
