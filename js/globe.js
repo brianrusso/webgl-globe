@@ -186,7 +186,7 @@ Globe = function(container, opts) {
     return lat + ":" + lng;
   };
 
-  function addPoint(lat, lng, opts) {
+  function updatePoint(lat, lng, opts) {
     opts = opts || {};
 
     opts.amount            = opts.amount            || 1;
@@ -210,7 +210,7 @@ Globe = function(container, opts) {
       self.points[pointKey] = createNewPoint(lat, lng, opts);
     }
   };
-  self.addPoint = addPoint;
+  self.updatePoint = updatePoint;
 
   function createNewPoint(lat, lng, opts) {
     var pointMesh = new THREE.Mesh( self.pointBaseGeometry, self.pointBaseMaterial.clone() );
