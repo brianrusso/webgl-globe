@@ -224,12 +224,12 @@ Globe = function(container, opts) {
 
     pointMesh.lookAt(globeMesh.position);
 
-    pointMesh.scale.z = Math.max( opts.amount, self.minHeight ); // avoid non-invertible matrix
+    pointMesh.scale.z = Math.max( opts.amount, self.minHeight );
     pointMesh.updateMatrix();
 
     scene.add( pointMesh );
 
-    var tween = createAgeTweenForMesh(pointMesh, opts)//.start();
+    var tween = createAgeTweenForMesh(pointMesh, opts)
     tween.start();
 
     return {
