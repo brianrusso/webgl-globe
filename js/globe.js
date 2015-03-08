@@ -18,7 +18,7 @@ Globe = function(container, opts) {
 
   opts = opts || {};
 
-  self.imgDir = opts.imgDir || '/images/';
+  self.mapImage = opts.mapImage || '/images/world.jpg';
 
   self.coordinatePrecision = opts.coordinatePrecision || 2;
 
@@ -89,7 +89,7 @@ Globe = function(container, opts) {
   };
 
   var camera, scene, renderer, w, h;
-  var mesh, atmosphere, point;
+  var globeMesh;
 
   var overRenderer;
 
@@ -110,8 +110,8 @@ Globe = function(container, opts) {
     container.style.color = '#fff';
     container.style.font = '13px/20px Arial, sans-serif';
 
-    var shader, uniforms, material;
-    w = container.offsetWidth || window.innerWidth;
+    var shader, uniforms;
+    w = container.offsetWidth  || window.innerWidth;
     h = container.offsetHeight || window.innerHeight;
 
     camera = new THREE.PerspectiveCamera(30, w / h, 1, 10000);
@@ -119,14 +119,14 @@ Globe = function(container, opts) {
 
     scene = new THREE.Scene();
 
-    var geometry = new THREE.SphereGeometry(200, 40, 30);
+    // Globe
+    var globeGeometry = new THREE.SphereGeometry(200, 40, 30);
 
-    shader = Shaders['earth'];
+    shader   = Shaders['earth'];
     uniforms = THREE.UniformsUtils.clone(shader.uniforms);
+    uniforms['texture'].value = THREE.ImageUtils.loadTexture(self.mapImage);
 
-    uniforms['texture'].value = THREE.ImageUtils.loadTexture(self.imgDir+'world.jpg');
-
-    material = new THREE.ShaderMaterial({
+    var globeMaterial = new THREE.ShaderMaterial({
 
           uniforms: uniforms,
           vertexShader: shader.vertexShader,
@@ -134,14 +134,14 @@ Globe = function(container, opts) {
 
         });
 
-    mesh = new THREE.Mesh(geometry, material);
-    mesh.rotation.y = Math.PI;
-    scene.add(mesh);
+    globeMesh = new THREE.Mesh(globeGeometry, globeMaterial);
+    globeMesh.rotation.y = Math.PI;
+    scene.add(globeMesh);
 
-    shader = Shaders['atmosphere'];
+    // Atmosphere
+    shader   = Shaders['atmosphere'];
     uniforms = THREE.UniformsUtils.clone(shader.uniforms);
-
-    material = new THREE.ShaderMaterial({
+    var atmosphereMaterial = new THREE.ShaderMaterial({
 
           uniforms: uniforms,
           vertexShader: shader.vertexShader,
@@ -152,15 +152,11 @@ Globe = function(container, opts) {
 
         });
 
-    mesh = new THREE.Mesh(geometry, material);
-    mesh.scale.set( 1.1, 1.1, 1.1 );
-    scene.add(mesh);
+    var atmosphereMesh = new THREE.Mesh(globeGeometry, atmosphereMaterial);
+    atmosphereMesh.scale.set( 1.1, 1.1, 1.1 );
+    scene.add(atmosphereMesh);
 
-    geometry = new THREE.BoxGeometry(0.75, 0.75, 1);
-    geometry.applyMatrix(new THREE.Matrix4().makeTranslation(0,0,-0.5));
-
-    point = new THREE.Mesh(geometry);
-
+    // Renderer
     renderer = new THREE.WebGLRenderer({antialias: true});
     renderer.setSize(w, h);
 
@@ -168,12 +164,10 @@ Globe = function(container, opts) {
 
     container.appendChild(renderer.domElement);
 
+    // Event listeners
     container.addEventListener('mousedown', onMouseDown, false);
-
     container.addEventListener('mousewheel', onMouseWheel, false);
-
     document.addEventListener('keydown', onDocumentKeyDown, false);
-
     window.addEventListener('resize', onWindowResize, false);
 
     container.addEventListener('mouseover', function() {
@@ -228,7 +222,7 @@ Globe = function(container, opts) {
     pointMesh.position.y = 200 * Math.cos(phi);
     pointMesh.position.z = 200 * Math.sin(phi) * Math.sin(theta);
 
-    pointMesh.lookAt(mesh.position);
+    pointMesh.lookAt(globeMesh.position);
 
     pointMesh.scale.z = Math.max( opts.amount, self.minHeight ); // avoid non-invertible matrix
     pointMesh.updateMatrix();
@@ -370,7 +364,7 @@ Globe = function(container, opts) {
     camera.position.y = distance * Math.sin(rotation.y);
     camera.position.z = distance * Math.cos(rotation.x) * Math.cos(rotation.y);
 
-    camera.lookAt(mesh.position);
+    camera.lookAt(globeMesh.position);
 
     renderer.render(scene, camera);
   }
