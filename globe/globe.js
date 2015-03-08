@@ -217,113 +217,6 @@ DAT.Globe = function(container, opts) {
 
   };
 
-  var boxGeometry = new THREE.BoxGeometry( 1, 1, 1 );
-  var boxMaterial = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
-
-  var points = {};
-
-  function roundCoord(coord) {
-    return parseFloat(Math.round(coord).toFixed(2));
-  };
-
-  function createPointKey(lat, lng){
-    return lat + ":" + lng;
-  };
-
-  function addDataPoint(lat, lng, opts) {
-
-    opts                    = opts || {};
-    opts.height             = opts.height || 1;
-    opts.minHeight          = opts.minHeight || 0.1; //TODO make instance variable for globe
-    opts.maxHeight          = opts.maxHeight || 180; //TODO make instance variable for globe
-    opts.ageTimePerBlock    = opts.ageTimePerBlock || 100;
-    opts.updateTimePerBlock = opts.updateTimePerBlock || 100;
-
-    if (opts.height > opts.maxHeight)
-      opts.height = opts.maxHeight;
-
-    opts.onPointAge = opts.onPointAge || function(point) {
-      var height = point.scale.z;
-      point.material.color.setHSL( (1 - (height / opts.maxHeight)) * 0.66, 1, 0.5);
-    };
-
-    opts.onPointUpdated = opts.onPointAge || function(point) {
-      var height = point.scale.z;
-      point.material.color.setRGB(0xffffff);
-    };
-
-    lat = roundCoord(lat);
-    lng = roundCoord(lng);
-
-    var pointKey      = createPointKey(lat, lng);
-    var existingPoint = points[pointKey];
-    if (existingPoint) {
-      updateExistingPoint(existingPoint, opts);
-    } else {
-      points[pointKey] = createNewPoint(lat, lng, opts);
-    }
-  };
-  this.addDataPoint = addDataPoint;
-
-  function createNewPoint(lat, lng, opts) {
-    var boxMesh = new THREE.Mesh( boxGeometry, boxMaterial.clone() );
-
-    var phi = (90 - lat) * Math.PI / 180;
-    var theta = (180 - lng) * Math.PI / 180;
-
-    boxMesh.position.x = 200 * Math.sin(phi) * Math.cos(theta);
-    boxMesh.position.y = 200 * Math.cos(phi);
-    boxMesh.position.z = 200 * Math.sin(phi) * Math.sin(theta);
-
-    boxMesh.lookAt(mesh.position);
-
-    boxMesh.scale.z = Math.max( opts.height, opts.minHeight ); // avoid non-invertible matrix
-    boxMesh.updateMatrix();
-
-    scene.add( boxMesh );
-
-    var tween = createAgeTweenForMesh(boxMesh, opts)//.start();
-    tween.start();
-
-    return {
-      mesh: boxMesh,
-      tween: tween,
-    };
-  }
-
-  function updateExistingPoint(point, opts) {
-    point.tween.stop();
-    point.tween = createUpdateTweenForPoint(point, opts);
-    point.tween.start();
-  }
-
-  function createAgeTweenForMesh(boxMesh, opts) {
-    return new TWEEN.Tween(boxMesh.scale)
-    .to({ z: opts.minHeight }, boxMesh.scale.z * opts.ageTimePerBlock)
-    .easing(TWEEN.Easing.Quadratic.InOut)
-    .onUpdate(function() {
-      opts.onPointAge(boxMesh);
-    });
-  }
-
-  function createUpdateTweenForPoint(point, opts) {
-    var heightTo = point.mesh.scale.z + opts.height;
-    if (heightTo >= opts.maxHeight) {
-      heightTo = opts.maxHeight;
-    }
-
-    return new TWEEN.Tween(point.mesh.scale)
-    .to({ z: heightTo }, heightTo * opts.updateTimePerBlock/10)
-    .easing(TWEEN.Easing.Bounce.Out)
-    .onUpdate(function() {
-      opts.onPointUpdated(point.mesh);
-    })
-    .onComplete(function() {
-      point.tween = createAgeTweenForMesh(point.mesh, opts);
-      point.tween.start();
-    });
-  }
-
   function createPoints() {
     if (this._baseGeometry !== undefined) {
       if (this.is_animated === false) {
@@ -376,6 +269,128 @@ DAT.Globe = function(container, opts) {
     }
     subgeo.merge(point.geometry, point.matrix);
   }
+
+  // ----- REALTIME ----- //
+
+  var self = this;
+
+  var boxGeometry = new THREE.BoxGeometry( 1, 1, 1 );
+  var boxMaterial = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
+
+  var realtimePoints = {};
+
+  function roundCoord(coord) {
+    return parseFloat(Math.round(coord).toFixed(2));
+  };
+
+  function createPointKey(lat, lng){
+    return lat + ":" + lng;
+  };
+
+  function setupRealtimeOptions(opts) {
+    opts = opts || {};
+
+    self.minHeight = opts.minHeight || 0.1;
+    self.maxHeight = opts.maxHeight || 180;
+    self.ageDelay  = opts.ageDelay  || 1000;
+
+    self.defaultAgingCallback = function(point) {
+      var height = point.scale.z;
+      point.material.color.setHSL( (1 - (height / self.maxHeight)) * 0.66, 1, 0.5);
+    };
+
+    self.defaultUpdatedCallback = function(point) {
+      point.material.color.setHex(0xffffff);
+    };
+  }
+  self.setupRealtimeOptions = setupRealtimeOptions;
+
+  function addRealtimePoint(lat, lng, opts) {
+    opts                    = opts                    || {};
+    opts.amount             = opts.amount             || 1;
+    opts.ageTimePerBlock    = opts.ageTimePerBlock    || 100;
+    opts.updateTimePerBlock = opts.updateTimePerBlock || 100;
+
+    if (opts.amount > self.maxHeight)
+      opts.amount = self.maxHeight;
+
+    opts.onPointAge     = opts.onPointAge     || self.defaultAgingCallback;
+    opts.onPointUpdated = opts.onPointUpdated || self.defaultUpdatedCallback;
+
+    lat = roundCoord(lat);
+    lng = roundCoord(lng);
+
+    var pointKey      = createPointKey(lat, lng);
+    var existingPoint = realtimePoints[pointKey];
+    if (existingPoint) {
+      updateExistingPoint(existingPoint, opts);
+    } else {
+      realtimePoints[pointKey] = createNewPoint(lat, lng, opts);
+    }
+  };
+  self.addRealtimePoint = addRealtimePoint;
+
+  function createNewPoint(lat, lng, opts) {
+    var boxMesh = new THREE.Mesh( boxGeometry, boxMaterial.clone() );
+
+    var phi = (90 - lat) * Math.PI / 180;
+    var theta = (180 - lng) * Math.PI / 180;
+
+    boxMesh.position.x = 200 * Math.sin(phi) * Math.cos(theta);
+    boxMesh.position.y = 200 * Math.cos(phi);
+    boxMesh.position.z = 200 * Math.sin(phi) * Math.sin(theta);
+
+    boxMesh.lookAt(mesh.position);
+
+    boxMesh.scale.z = Math.max( opts.amount, self.minHeight ); // avoid non-invertible matrix
+    boxMesh.updateMatrix();
+
+    scene.add( boxMesh );
+
+    var tween = createAgeTweenForMesh(boxMesh, opts)//.start();
+    tween.start();
+
+    return {
+      mesh: boxMesh,
+      tween: tween,
+    };
+  }
+
+  function updateExistingPoint(point, opts) {
+    point.tween.stop();
+    point.tween = createUpdateTweenForPoint(point, opts);
+    point.tween.start();
+  }
+
+  function createAgeTweenForMesh(boxMesh, opts) {
+    return new TWEEN.Tween(boxMesh.scale)
+    .to({ z: self.minHeight }, boxMesh.scale.z * opts.ageTimePerBlock)
+    .easing(TWEEN.Easing.Quadratic.InOut)
+    .onUpdate(function() {
+      opts.onPointAge(boxMesh);
+    });
+  }
+
+  function createUpdateTweenForPoint(point, opts) {
+    var heightTo = point.mesh.scale.z + opts.amount;
+    if (heightTo >= self.maxHeight) {
+      heightTo = self.maxHeight;
+    }
+
+    return new TWEEN.Tween(point.mesh.scale)
+    .to({ z: heightTo }, heightTo * opts.updateTimePerBlock/10)
+    .easing(TWEEN.Easing.Bounce.Out)
+    .onUpdate(function() {
+      opts.onPointUpdated(point.mesh);
+    })
+    .onComplete(function() {
+      point.tween = createAgeTweenForMesh(point.mesh, opts);
+      point.tween.delay(self.ageDelay);
+      point.tween.start();
+    });
+  }
+
+  // ----- END REALTIME ----- //
 
   function onMouseDown(event) {
     event.preventDefault();
