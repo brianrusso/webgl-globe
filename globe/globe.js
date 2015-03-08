@@ -232,11 +232,12 @@ DAT.Globe = function(container, opts) {
 
   function addDataPoint(lat, lng, opts) {
 
-    opts               = opts || {};
-    opts.height        = opts.height || 1;
-    opts.minHeight     = opts.minHeight || 0.1; //TODO make instance variable for globe
-    opts.maxHeight     = opts.maxHeight || 180; //TODO make instance variable for globe
-    opts.speed         = opts.speed || 1;
+    opts                    = opts || {};
+    opts.height             = opts.height || 1;
+    opts.minHeight          = opts.minHeight || 0.1; //TODO make instance variable for globe
+    opts.maxHeight          = opts.maxHeight || 180; //TODO make instance variable for globe
+    opts.ageTimePerBlock    = opts.ageTimePerBlock || 100;
+    opts.updateTimePerBlock = opts.updateTimePerBlock || 100;
 
     if (opts.height > opts.maxHeight)
       opts.height = opts.maxHeight;
@@ -246,13 +247,18 @@ DAT.Globe = function(container, opts) {
       point.material.color.setHSL( (1 - (height / opts.maxHeight)) * 0.66, 1, 0.5);
     };
 
+    opts.onPointUpdated = opts.onPointAge || function(point) {
+      var height = point.scale.z;
+      point.material.color.setRGB(0xffffff);
+    };
+
     lat = roundCoord(lat);
     lng = roundCoord(lng);
 
     var pointKey      = createPointKey(lat, lng);
     var existingPoint = points[pointKey];
     if (existingPoint) {
-      updateExistingPoint(existingPoint);
+      updateExistingPoint(existingPoint, opts);
     } else {
       points[pointKey] = createNewPoint(lat, lng, opts);
     }
@@ -276,7 +282,7 @@ DAT.Globe = function(container, opts) {
 
     scene.add( boxMesh );
 
-    var tween = createTweenForMesh(boxMesh, opts)//.start();
+    var tween = createAgeTweenForMesh(boxMesh, opts)//.start();
     tween.start();
 
     return {
@@ -287,20 +293,37 @@ DAT.Globe = function(container, opts) {
 
   function updateExistingPoint(point, opts) {
     point.tween.stop();
-
-    //TODO raise height and create new tween
+    point.tween = createUpdateTweenForPoint(point, opts);
+    point.tween.start();
   }
 
-  function createTweenForMesh(boxMesh, opts) {
+  function createAgeTweenForMesh(boxMesh, opts) {
     return new TWEEN.Tween(boxMesh.scale)
-    .to({ z: opts.minHeight }, boxMesh.scale.z * opts.height)
-    .easing(TWEEN.Easing.Bounce.Out)
+    .to({ z: opts.minHeight }, boxMesh.scale.z * opts.ageTimePerBlock)
+    .easing(TWEEN.Easing.Quadratic.InOut)
     .onUpdate(function() {
       opts.onPointAge(boxMesh);
-      //Update color using "opts.onPointAge"
     });
   }
 
+  function createUpdateTweenForPoint(point, opts) {
+    var heightTo = point.mesh.scale.z + opts.height;
+    if (heightTo >= opts.maxHeight) {
+      heightTo = opts.maxHeight;
+    }
+
+    return new TWEEN.Tween(point.mesh.scale)
+    .to({ z: heightTo }, heightTo * opts.updateTimePerBlock/10)
+    .easing(TWEEN.Easing.Bounce.Out)
+    .onUpdate(function() {
+      opts.onPointUpdated(point.mesh);
+    })
+    .onComplete(function() {
+      point.tween.stop();
+      point.tween = createAgeTweenForMesh(point.mesh, opts);
+      point.tween.start();
+    });
+  }
 
   function createPoints() {
     if (this._baseGeometry !== undefined) {
