@@ -20,30 +20,27 @@ Globe = function(container, opts) {
 
   self.mapImage = opts.mapImage || '/images/world.jpg';
 
-  self.coordinatePrecision = opts.coordinatePrecision || 2;
-
-  self.minHeight = opts.minHeight || 0.1;
-  self.maxHeight = opts.maxHeight || 180;
-  self.ageDelay  = opts.ageDelay  || 1000;
-
+  self.minHeight         = opts.minHeight         || 0.1;
+  self.maxHeight         = opts.maxHeight         || 180;
+  self.ageDelay          = opts.ageDelay          || 1000;
   self.ageTimePerUnit    = opts.ageTimePerUnit    || 100;
   self.updateTimePerUnit = opts.updateTimePerUnit || 100;
+
+  self.coordinatePrecision = opts.coordinatePrecision || 2;
 
   self.pointBaseGeometry = new THREE.BoxGeometry( 1, 1, 1 );
   // Sets geometry origin to bottom, makes z scaling only scale in an upwards direction
   self.pointBaseGeometry.applyMatrix( new THREE.Matrix4().makeTranslation( 0, 0, -0.5 ) );
   self.pointBaseMaterial = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
 
-  self.defaultPointAgingCallback = function(pointMesh) {
+  self.onPointAging = opts.onPointAging || function(pointMesh) {
     var height = pointMesh.scale.z;
     pointMesh.material.color.setHSL( (1 - (height / self.maxHeight)) * 0.66, 1, 0.5);
   };
 
-  self.defaultPointUpdatedCallback = function(pointMesh) {
+  self.onPointUpdated = opts.onPointUpdated || function(pointMesh) {
     pointMesh.material.color.setHex(0xffffff);
   };
-
-
 
   var Shaders = {
     'earth' : {
@@ -190,16 +187,17 @@ Globe = function(container, opts) {
   };
 
   function addPoint(lat, lng, opts) {
-    opts                    = opts                    || {};
-    opts.amount             = opts.amount             || 1;
-    opts.ageTimePerBlock    = opts.ageTimePerBlock    || 100;
-    opts.updateTimePerBlock = opts.updateTimePerBlock || 100;
+    opts = opts || {};
+
+    opts.amount            = opts.amount            || 1;
+    opts.ageTimePerUnit    = opts.ageTimePerUnit    || self.ageTimePerUnit;
+    opts.updateTimePerUnit = opts.updateTimePerUnit || self.updateTimePerUnit;
 
     if (opts.amount > self.maxHeight)
       opts.amount = self.maxHeight;
 
-    opts.onPointAge     = opts.onPointAge     || self.defaultPointAgingCallback;
-    opts.onPointUpdated = opts.onPointUpdated || self.defaultPointUpdatedCallback;
+    opts.onPointAging   = opts.onPointAging   || self.onPointAging;
+    opts.onPointUpdated = opts.onPointUpdated || self.onPointUpdated;
 
     lat = roundCoord(lat);
     lng = roundCoord(lng);
@@ -248,10 +246,10 @@ Globe = function(container, opts) {
 
   function createAgeTweenForMesh(pointMesh, opts) {
     return new TWEEN.Tween(pointMesh.scale)
-    .to({ z: self.minHeight }, pointMesh.scale.z * opts.ageTimePerBlock)
+    .to({ z: self.minHeight }, pointMesh.scale.z * opts.ageTimePerUnit)
     .easing(TWEEN.Easing.Quadratic.InOut)
     .onUpdate(function() {
-      opts.onPointAge(pointMesh);
+      opts.onPointAging(pointMesh);
     });
   }
 
@@ -262,7 +260,7 @@ Globe = function(container, opts) {
     }
 
     return new TWEEN.Tween(point.mesh.scale)
-    .to({ z: heightTo }, heightTo * opts.updateTimePerBlock/10)
+    .to({ z: heightTo }, heightTo * opts.updateTimePerUnit/10)
     .easing(TWEEN.Easing.Bounce.Out)
     .onUpdate(function() {
       opts.onPointUpdated(point.mesh);
