@@ -4,6 +4,16 @@ This globe is based on [dataarts/webgl-globe](https://github.com/dataarts/webgl-
 
 This globe can add and update points in realtime.
 
+# Run example
+
+```
+$ git clone git@github.com:roback/webgl-globe.git
+$ cd webgl-globe
+$ python -m SimpleHTTPServer
+
+# Open web browser and go to localhost:8000
+```
+
 # Usage
 
 ```javascript
