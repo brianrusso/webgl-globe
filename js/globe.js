@@ -20,14 +20,14 @@ Globe = function(container, opts) {
 
   self.mapImage = opts.mapImage || '/images/world.jpg';
 
-  self.minHeight            = opts.minHeight            || 0.1;
-  self.maxHeight            = opts.maxHeight            || 180;
-  self.colorMaxAge          = opts.colorMaxAge          || 10000;
-  self.ageDelay             = opts.ageDelay             || 1000;
-  self.heightDecreaseTimePerUnit = opts.heightDecreaseTimePerUnit || 100;
-  self.heightIncreaseTimePerUnit = opts.heightIncreaseTimePerUnit || 10;
+  self.minHeight           = opts.minHeight           || 0.1;
+  self.maxHeight           = opts.maxHeight           || 180;
+  self.colorMaxAge         = opts.colorMaxAge         || 10000;
+  self.ageDelay            = opts.ageDelay            || 1000;
+  self.heightDecreaseSpeed = opts.heightDecreaseSpeed || 10;
+  self.heightIncreaseSpeed = opts.heightIncreaseSpeed || 100;
 
-  self.coordinatePrecision  = opts.coordinatePrecision  || 2;
+  self.coordinatePrecision = opts.coordinatePrecision || 2;
 
   self.pointBaseGeometry = new THREE.BoxGeometry( 1, 1, 1 );
   // Sets geometry origin to bottom, makes z scaling only scale in an upwards direction
@@ -189,10 +189,10 @@ Globe = function(container, opts) {
   function updatePoint(lat, lng, opts) {
     opts = opts || {};
 
-    opts.amount            = opts.amount            || 1;
-    opts.colorMaxAge       = opts.colorMaxAge       || self.colorMaxAge;
-    opts.heightDecreaseTimePerUnit    = opts.heightDecreaseTimePerUnit    || self.heightDecreaseTimePerUnit;
-    opts.heightIncreaseTimePerUnit = opts.heightIncreaseTimePerUnit || self.heightIncreaseTimePerUnit;
+    opts.amount              = opts.amount              || 1;
+    opts.colorMaxAge         = opts.colorMaxAge         || self.colorMaxAge;
+    opts.heightDecreaseSpeed = opts.heightDecreaseSpeed || self.heightDecreaseSpeed;
+    opts.heightIncreaseSpeed = opts.heightIncreaseSpeed || self.heightIncreaseSpeed;
 
     if (opts.amount > self.maxHeight)
       opts.amount = self.maxHeight;
@@ -246,7 +246,7 @@ Globe = function(container, opts) {
 
   function createHeightDecreaseTweenForPoint(point, opts) {
     return new TWEEN.Tween(point.mesh.scale)
-    .to({ z: self.minHeight }, point.mesh.scale.z * opts.heightDecreaseTimePerUnit)
+    .to({ z: self.minHeight }, point.mesh.scale.z * 1000/opts.heightDecreaseSpeed)
     .easing(TWEEN.Easing.Quadratic.InOut);
   }
 
@@ -266,7 +266,7 @@ Globe = function(container, opts) {
     }
 
     return new TWEEN.Tween(point.mesh.scale)
-    .to({ z: heightTo }, heightTo * opts.heightIncreaseTimePerUnit)
+    .to({ z: heightTo }, heightTo * 1000/opts.heightIncreaseSpeed)
     .easing(TWEEN.Easing.Bounce.Out)
     .onUpdate(function() {
       opts.onPointUpdated(point);
