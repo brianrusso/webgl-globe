@@ -191,6 +191,7 @@ Globe = function(container, opts) {
 
     opts.amount              = opts.amount              || 1;
     opts.maxAge              = opts.maxAge              || self.maxAge;
+    opts.ageDelay            = opts.ageDelay            || self.ageDelay;
     opts.heightDecreaseSpeed = opts.heightDecreaseSpeed || self.heightDecreaseSpeed;
     opts.heightIncreaseSpeed = opts.heightIncreaseSpeed || self.heightIncreaseSpeed;
 
@@ -234,6 +235,8 @@ Globe = function(container, opts) {
     point.heightTween = createheightIncreaseTweenForPoint(point, opts);
     point.heightTween.start();
 
+    opts.onPointUpdated(point);
+
     return point;
   }
 
@@ -242,6 +245,8 @@ Globe = function(container, opts) {
     point.heightTween.stop();
     point.heightTween = createheightIncreaseTweenForPoint(point, opts);
     point.heightTween.start();
+
+    opts.onPointUpdated(point);
   }
 
   function createHeightDecreaseTweenForPoint(point, opts) {
@@ -268,9 +273,6 @@ Globe = function(container, opts) {
     return new TWEEN.Tween(point.mesh.scale)
     .to({ z: heightTo }, heightTo * 1000/opts.heightIncreaseSpeed)
     .easing(TWEEN.Easing.Bounce.Out)
-    .onUpdate(function() {
-      opts.onPointUpdated(point);
-    })
     .onComplete(function() {
       point.heightTween = createHeightDecreaseTweenForPoint(point, opts);
       point.heightTween.delay(self.ageDelay);
