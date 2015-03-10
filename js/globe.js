@@ -20,22 +20,22 @@ Globe = function(container, opts) {
 
   self.mapImage = opts.mapImage || '/images/world.jpg';
 
-  self.minHeight         = opts.minHeight         || 0.1;
-  self.maxHeight         = opts.maxHeight         || 180;
-  self.ageDelay          = opts.ageDelay          || 1000;
-  self.ageTimePerUnit    = opts.ageTimePerUnit    || 100;
-  self.updateTimePerUnit = opts.updateTimePerUnit || 100;
+  self.minHeight            = opts.minHeight            || 0.1;
+  self.maxHeight            = opts.maxHeight            || 180;
+  self.colorMaxAge          = opts.colorMaxAge          || 10000;
+  self.ageDelay             = opts.ageDelay             || 1000;
+  self.heightDecreaseTimePerUnit = opts.heightDecreaseTimePerUnit || 100;
+  self.heightIncreaseTimePerUnit = opts.heightIncreaseTimePerUnit || 10;
 
-  self.coordinatePrecision = opts.coordinatePrecision || 2;
+  self.coordinatePrecision  = opts.coordinatePrecision  || 2;
 
   self.pointBaseGeometry = new THREE.BoxGeometry( 1, 1, 1 );
   // Sets geometry origin to bottom, makes z scaling only scale in an upwards direction
   self.pointBaseGeometry.applyMatrix( new THREE.Matrix4().makeTranslation( 0, 0, -0.5 ) );
   self.pointBaseMaterial = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
 
-  self.onPointAging = opts.onPointAging || function(point) {
-    var height = point.mesh.scale.z;
-    point.mesh.material.color.setHSL( (1 - (height / self.maxHeight)) * 0.66, 1, 0.5);
+  self.onPointAging = opts.onPointAging || function(point, percent) {
+    point.mesh.material.color.setHSL( percent/100 * 0.66, 1, 0.5);
   };
 
   self.onPointUpdated = opts.onPointUpdated || function(point) {
@@ -190,8 +190,9 @@ Globe = function(container, opts) {
     opts = opts || {};
 
     opts.amount            = opts.amount            || 1;
-    opts.ageTimePerUnit    = opts.ageTimePerUnit    || self.ageTimePerUnit;
-    opts.updateTimePerUnit = opts.updateTimePerUnit || self.updateTimePerUnit;
+    opts.colorMaxAge       = opts.colorMaxAge       || self.colorMaxAge;
+    opts.heightDecreaseTimePerUnit    = opts.heightDecreaseTimePerUnit    || self.heightDecreaseTimePerUnit;
+    opts.heightIncreaseTimePerUnit = opts.heightIncreaseTimePerUnit || self.heightIncreaseTimePerUnit;
 
     if (opts.amount > self.maxHeight)
       opts.amount = self.maxHeight;
@@ -230,44 +231,54 @@ Globe = function(container, opts) {
       mesh: pointMesh,
     }
 
-    point.tween = createUpdateTweenForPoint(point, opts);
-    point.tween.start();
+    point.heightTween = createheightIncreaseTweenForPoint(point, opts);
+    point.heightTween.start();
 
     return point;
   }
 
   function updateExistingPoint(point, opts) {
-    point.tween.stop();
-    point.tween = createUpdateTweenForPoint(point, opts);
-    point.tween.start();
+    if (point.ageColorTween) point.ageColorTween.stop();
+    point.heightTween.stop();
+    point.heightTween = createheightIncreaseTweenForPoint(point, opts);
+    point.heightTween.start();
   }
 
-  function createAgeTweenForPoint(point, opts) {
-    var pointMesh = point.mesh;
-    return new TWEEN.Tween(pointMesh.scale)
-    .to({ z: self.minHeight }, pointMesh.scale.z * opts.ageTimePerUnit)
+  function createHeightDecreaseTweenForPoint(point, opts) {
+    return new TWEEN.Tween(point.mesh.scale)
+    .to({ z: self.minHeight }, point.mesh.scale.z * opts.heightDecreaseTimePerUnit)
+    .easing(TWEEN.Easing.Quadratic.InOut);
+  }
+
+  function createColorAgeTweenForPoint(point, opts) {
+    return new TWEEN.Tween({ percent: 0 })
+    .to({ percent: 100 }, opts.colorMaxAge)
     .easing(TWEEN.Easing.Quadratic.InOut)
     .onUpdate(function() {
-      opts.onPointAging(point);
+      opts.onPointAging(point, this.percent);
     });
   }
 
-  function createUpdateTweenForPoint(point, opts) {
+  function createheightIncreaseTweenForPoint(point, opts) {
     var heightTo = point.mesh.scale.z + opts.amount;
     if (heightTo >= self.maxHeight) {
       heightTo = self.maxHeight;
     }
 
     return new TWEEN.Tween(point.mesh.scale)
-    .to({ z: heightTo }, heightTo * opts.updateTimePerUnit/10)
+    .to({ z: heightTo }, heightTo * opts.heightIncreaseTimePerUnit)
     .easing(TWEEN.Easing.Bounce.Out)
     .onUpdate(function() {
       opts.onPointUpdated(point);
     })
     .onComplete(function() {
-      point.tween = createAgeTweenForPoint(point, opts);
-      point.tween.delay(self.ageDelay);
-      point.tween.start();
+      point.heightTween = createHeightDecreaseTweenForPoint(point, opts);
+      point.heightTween.delay(self.ageDelay);
+      point.heightTween.start();
+
+      point.ageColorTween = createColorAgeTweenForPoint(point, opts);
+      point.ageColorTween.delay(self.ageDelay);
+      point.ageColorTween.start();
     });
   }
 
