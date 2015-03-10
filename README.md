@@ -47,7 +47,7 @@ var pointOpts = {
   opts.heightDecreaseSpeed: // Defaults to globeOpts.heightDecreaseSpeed
   opts.heightIncreaseSpeed: // Defaults to globeOpts.heightIncreaseSpeed
   opts.onPointAging:        // Defaults to globeOpts.onPointAging
-  opts.onPointUpdated       // Defaults to globeOpts.onPointUpdated
+  opts.onPointUpdated:      // Defaults to globeOpts.onPointUpdated
 };
 
 // Update point/add new if it doesnt exist
