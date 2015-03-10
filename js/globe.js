@@ -33,13 +33,13 @@ Globe = function(container, opts) {
   self.pointBaseGeometry.applyMatrix( new THREE.Matrix4().makeTranslation( 0, 0, -0.5 ) );
   self.pointBaseMaterial = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
 
-  self.onPointAging = opts.onPointAging || function(pointMesh) {
-    var height = pointMesh.scale.z;
-    pointMesh.material.color.setHSL( (1 - (height / self.maxHeight)) * 0.66, 1, 0.5);
+  self.onPointAging = opts.onPointAging || function(point) {
+    var height = point.mesh.scale.z;
+    point.mesh.material.color.setHSL( (1 - (height / self.maxHeight)) * 0.66, 1, 0.5);
   };
 
-  self.onPointUpdated = opts.onPointUpdated || function(pointMesh) {
-    pointMesh.material.color.setHex(0xffffff);
+  self.onPointUpdated = opts.onPointUpdated || function(point) {
+    point.mesh.material.color.setHex(0xffffff);
   };
 
   var Shaders = {
@@ -242,12 +242,13 @@ Globe = function(container, opts) {
     point.tween.start();
   }
 
-  function createAgeTweenForMesh(pointMesh, opts) {
+  function createAgeTweenForPoint(point, opts) {
+    var pointMesh = point.mesh;
     return new TWEEN.Tween(pointMesh.scale)
     .to({ z: self.minHeight }, pointMesh.scale.z * opts.ageTimePerUnit)
     .easing(TWEEN.Easing.Quadratic.InOut)
     .onUpdate(function() {
-      opts.onPointAging(pointMesh);
+      opts.onPointAging(point);
     });
   }
 
@@ -261,10 +262,10 @@ Globe = function(container, opts) {
     .to({ z: heightTo }, heightTo * opts.updateTimePerUnit/10)
     .easing(TWEEN.Easing.Bounce.Out)
     .onUpdate(function() {
-      opts.onPointUpdated(point.mesh);
+      opts.onPointUpdated(point);
     })
     .onComplete(function() {
-      point.tween = createAgeTweenForMesh(point.mesh, opts);
+      point.tween = createAgeTweenForPoint(point, opts);
       point.tween.delay(self.ageDelay);
       point.tween.start();
     });
