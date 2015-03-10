@@ -32,7 +32,7 @@ Globe = function(container, opts) {
   self.pointBaseGeometry = new THREE.BoxGeometry( 1, 1, 1 );
   // Sets geometry origin to bottom, makes z scaling only scale in an upwards direction
   self.pointBaseGeometry.applyMatrix( new THREE.Matrix4().makeTranslation( 0, 0, -0.5 ) );
-  self.pointBaseMaterial = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
+  self.pointBaseMaterial = new THREE.MeshBasicMaterial( { color: 0xffffff } );
 
   self.onPointAging = opts.onPointAging || function(point, percent) {
     point.mesh.material.color.setHSL( percent/100 * 0.66, 1, 0.5);
