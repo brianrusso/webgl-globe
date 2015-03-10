@@ -22,7 +22,7 @@ Globe = function(container, opts) {
 
   self.minHeight           = opts.minHeight           || 0.1;
   self.maxHeight           = opts.maxHeight           || 180;
-  self.colorMaxAge         = opts.colorMaxAge         || 10000;
+  self.maxAge              = opts.maxAge              || 10000;
   self.ageDelay            = opts.ageDelay            || 1000;
   self.heightDecreaseSpeed = opts.heightDecreaseSpeed || 10;
   self.heightIncreaseSpeed = opts.heightIncreaseSpeed || 100;
@@ -190,7 +190,7 @@ Globe = function(container, opts) {
     opts = opts || {};
 
     opts.amount              = opts.amount              || 1;
-    opts.colorMaxAge         = opts.colorMaxAge         || self.colorMaxAge;
+    opts.maxAge              = opts.maxAge              || self.maxAge;
     opts.heightDecreaseSpeed = opts.heightDecreaseSpeed || self.heightDecreaseSpeed;
     opts.heightIncreaseSpeed = opts.heightIncreaseSpeed || self.heightIncreaseSpeed;
 
@@ -250,9 +250,9 @@ Globe = function(container, opts) {
     .easing(TWEEN.Easing.Quadratic.InOut);
   }
 
-  function createColorAgeTweenForPoint(point, opts) {
+  function createAgeTweenForPoint(point, opts) {
     return new TWEEN.Tween({ percent: 0 })
-    .to({ percent: 100 }, opts.colorMaxAge)
+    .to({ percent: 100 }, opts.maxAge)
     .easing(TWEEN.Easing.Quadratic.InOut)
     .onUpdate(function() {
       opts.onPointAging(point, this.percent);
@@ -276,7 +276,7 @@ Globe = function(container, opts) {
       point.heightTween.delay(self.ageDelay);
       point.heightTween.start();
 
-      point.ageColorTween = createColorAgeTweenForPoint(point, opts);
+      point.ageColorTween = createAgeTweenForPoint(point, opts);
       point.ageColorTween.delay(self.ageDelay);
       point.ageColorTween.start();
     });
