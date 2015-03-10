@@ -224,18 +224,16 @@ Globe = function(container, opts) {
 
     pointMesh.lookAt(globeMesh.position);
 
-    pointMesh.scale.z = Math.max( opts.amount, self.minHeight );
-    pointMesh.updateMatrix();
-
     scene.add( pointMesh );
 
-    var tween = createAgeTweenForMesh(pointMesh, opts)
-    tween.start();
-
-    return {
+    var point = {
       mesh: pointMesh,
-      tween: tween,
-    };
+    }
+
+    point.tween = createUpdateTweenForPoint(point, opts);
+    point.tween.start();
+
+    return point;
   }
 
   function updateExistingPoint(point, opts) {
