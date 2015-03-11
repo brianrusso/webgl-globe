@@ -9,6 +9,7 @@ Globe = function(container, opts) {
 
   self.minHeight           = opts.minHeight           || 0.1;
   self.maxHeight           = opts.maxHeight           || 180;
+  self.pointSize           = opts.pointSize           || 1;
   self.maxAge              = opts.maxAge              || 10000;
   self.ageDelay            = opts.ageDelay            || 1000;
   self.heightDecreaseSpeed = opts.heightDecreaseSpeed || 10;
@@ -16,7 +17,7 @@ Globe = function(container, opts) {
 
   self.coordinatePrecision = opts.coordinatePrecision || 2;
 
-  self.pointBaseGeometry = new THREE.BoxGeometry( 1, 1, 1 );
+  self.pointBaseGeometry = new THREE.BoxGeometry( self.pointSize, self.pointSize, 1 );
   // Sets geometry origin to bottom, makes z scaling only scale in an upwards direction
   self.pointBaseGeometry.applyMatrix( new THREE.Matrix4().makeTranslation( 0, 0, -0.5 ) );
   self.pointBaseMaterial = new THREE.MeshBasicMaterial( { color: 0xffffff } );

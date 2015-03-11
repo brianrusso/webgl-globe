@@ -25,6 +25,7 @@ var globeOpts = {
   minHeight:           0.1,
   maxHeight:           180,
   maxAge:              10000,
+  pointSize:           1,
   ageDelay:            1000,
   heightDecreaseSpeed: 10,
   heightIncreaseSpeed: 100,
