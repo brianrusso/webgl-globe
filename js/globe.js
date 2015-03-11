@@ -197,6 +197,7 @@ Globe = function(container, opts) {
       updateExistingPoint(existingPoint, opts);
     } else {
       self.points[pointKey] = createNewPoint(lat, lng, opts);
+      updateExistingPoint(self.points[pointKey], opts);
     }
   };
   self.updatePoint = updatePoint;
@@ -221,8 +222,6 @@ Globe = function(container, opts) {
 
     point.heightTween = createheightIncreaseTweenForPoint(point, opts);
     point.heightTween.start();
-
-    opts.onPointUpdated(point);
 
     return point;
   }
