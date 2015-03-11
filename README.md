@@ -29,7 +29,7 @@ var globeOpts = {
   heightDecreaseSpeed: 100,
   heightIncreaseSpeed: 100,
   coordinatePrecision: 2,
-  onPointAging:        function(point){},
+  onPointAging:        function(point, percent){},
   onPointUpdated:      function(point){},
 };
 
