@@ -26,7 +26,7 @@ var globeOpts = {
   maxHeight:           180,
   maxAge:              10000,
   ageDelay:            1000,
-  heightDecreaseSpeed: 100,
+  heightDecreaseSpeed: 10,
   heightIncreaseSpeed: 100,
   coordinatePrecision: 2,
   onPointAging:        function(point, percent){},
