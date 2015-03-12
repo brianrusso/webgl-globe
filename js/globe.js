@@ -15,6 +15,8 @@ Globe = function(container, opts) {
   self.heightDecreaseSpeed = opts.heightDecreaseSpeed || 10;
   self.heightIncreaseSpeed = opts.heightIncreaseSpeed || 100;
 
+  self.rotationSpeed       = opts.rotationSpeed       || 1;
+
   self.coordinatePrecision = opts.coordinatePrecision || 2;
 
   self.pointBaseGeometry = new THREE.BoxGeometry( self.pointSize, self.pointSize, 1 );
@@ -91,6 +93,8 @@ Globe = function(container, opts) {
   var distance = 100000, distanceTarget = 100000;
   var padding = 40;
   var PI_HALF = Math.PI / 2;
+
+  var prevUpdateTime = new Date().getTime();
 
   function init() {
 
@@ -346,9 +350,24 @@ Globe = function(container, opts) {
     distanceTarget = distanceTarget < 350 ? 350 : distanceTarget;
   }
 
-  function animate() {
+  function rotateGlobe(deltaSeconds) {
+    if (self.rotationSpeed != 0) {
+
+      if (deltaSeconds > 0 && deltaSeconds < 1) {
+        target.x += self.rotationSpeed * deltaSeconds / -20;
+      }
+    }
+  }
+
+  function animate(time) {
+    var deltaSeconds = (time - prevUpdateTime) / 1000;
+    prevUpdateTime = time;
+
     requestAnimationFrame(animate);
     TWEEN.update();
+
+    rotateGlobe(deltaSeconds);
+
     render();
   }
 
@@ -368,8 +387,12 @@ Globe = function(container, opts) {
     renderer.render(scene, camera);
   }
 
+  function start() {
+    animate(prevUpdateTime);
+  }
+
   init();
-  this.animate = animate;
+  this.start = start;
 
   this.renderer = renderer;
   this.scene = scene;

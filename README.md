@@ -29,6 +29,7 @@ var globeOpts = {
   ageDelay:            1000,
   heightDecreaseSpeed: 10,
   heightIncreaseSpeed: 100,
+  rotationSpeed:       1,
   coordinatePrecision: 2,
   onPointAging:        function(point, percent){},
   onPointUpdated:      function(point){},
@@ -37,8 +38,8 @@ var globeOpts = {
 // Make the globe
 var globe = new Globe(container, globeOpts);
 
-// Begin animation
-globe.animate();
+// Start the globe
+globe.start();
 
 // This is the default
 var pointOpts = {
