@@ -96,6 +96,9 @@ Globe = function(container, opts) {
 
   var prevUpdateTime = new Date().getTime();
 
+  var paused = false;
+  var pausedTime = 0;
+
   function init() {
 
     container.style.color = '#fff';
@@ -226,7 +229,7 @@ Globe = function(container, opts) {
     }
 
     point.heightTween = createheightIncreaseTweenForPoint(point, opts);
-    point.heightTween.start();
+    point.heightTween.start(getTotalRunningTime());
 
     return point;
   }
@@ -235,7 +238,7 @@ Globe = function(container, opts) {
     if (point.ageColorTween) point.ageColorTween.stop();
     point.heightTween.stop();
     point.heightTween = createheightIncreaseTweenForPoint(point, opts);
-    point.heightTween.start();
+    point.heightTween.start(getTotalRunningTime());
 
     opts.onPointUpdated(point);
   }
@@ -267,11 +270,11 @@ Globe = function(container, opts) {
     .onComplete(function() {
       point.heightTween = createHeightDecreaseTweenForPoint(point, opts);
       point.heightTween.delay(self.ageDelay);
-      point.heightTween.start();
+      point.heightTween.start(getTotalRunningTime());
 
       point.ageColorTween = createAgeTweenForPoint(point, opts);
       point.ageColorTween.delay(self.ageDelay);
-      point.ageColorTween.start();
+      point.ageColorTween.start(getTotalRunningTime());
     });
   }
 
@@ -359,14 +362,21 @@ Globe = function(container, opts) {
     }
   }
 
+  function getTotalRunningTime() {
+    return prevUpdateTime - pausedTime;
+  }
+
   function animate(time) {
-    var deltaSeconds = (time - prevUpdateTime) / 1000;
+    var delta = time - prevUpdateTime;
     prevUpdateTime = time;
 
     requestAnimationFrame(animate);
-    TWEEN.update();
-
-    rotateGlobe(deltaSeconds);
+    if (paused) {
+      pausedTime += delta;
+    } else {
+      TWEEN.update(getTotalRunningTime());
+      rotateGlobe(delta / 1000);
+    }
 
     render();
   }
@@ -390,6 +400,11 @@ Globe = function(container, opts) {
   function start() {
     animate(prevUpdateTime);
   }
+
+  function togglePause() {
+    paused = !paused;
+  }
+  self.togglePause = togglePause;
 
   init();
   this.start = start;

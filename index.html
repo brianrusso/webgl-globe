@@ -47,6 +47,14 @@
         padding: 10px;
       }
 
+      #pause-button {
+        position: absolute;
+        bottom: 5px;
+        left: 10px;
+        padding: 10px;
+        cursor: pointer;
+      }
+
     </style>
   </head>
   <body>
@@ -61,6 +69,8 @@
     Realtime Webgl Globe
   </div>
 
+  <button id="pause-button">Pause</button>
+
   <script type="text/javascript" src="/js/third-party/Detector.js"></script>
   <script type="text/javascript" src="/js/third-party/three.min.js"></script>
   <script type="text/javascript" src="/js/third-party/tween.min.js"></script>
@@ -73,17 +83,25 @@
 
       var container = document.getElementById('container');
       var globe = new Globe(container);
+      var paused = false;
 
       console.log(globe);
 
       setInterval(function() {
+        if (paused) return;
         var lat = Math.random() * 180 - 90;
         var lng = Math.random() * 360 - 180;
-          globe.updatePoint(lat, lng, {amount: Math.random()*180+1});
+
+        globe.updatePoint(lat, lng, {amount: Math.random()*180+1});
       }, 100);
 
       globe.start();
       //document.body.style.backgroundImage = 'none'; // remove loading
+
+      document.getElementById("pause-button").onclick = function() {
+        paused = !paused;
+        globe.togglePause();
+      };
 
     }
 

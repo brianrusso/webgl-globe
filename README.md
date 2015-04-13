@@ -54,4 +54,7 @@ var pointOpts = {
 
 // Update point/add new if it doesnt exist
 globe.updatePoint(lat, lng, pointOpts);
+
+// Pause/unpause the point updating and globe rotation
+globe.togglePause();
 ```
