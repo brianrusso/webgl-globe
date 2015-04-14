@@ -266,7 +266,7 @@ Globe = function(container, opts) {
 
     return new TWEEN.Tween(point.mesh.scale)
     .to({ z: heightTo }, heightTo * 1000/opts.heightIncreaseSpeed)
-    .easing(TWEEN.Easing.Bounce.Out)
+    .easing(TWEEN.Easing.Linear.None)
     .onComplete(function() {
       point.heightTween = createHeightDecreaseTweenForPoint(point, opts);
       point.heightTween.delay(self.ageDelay);
