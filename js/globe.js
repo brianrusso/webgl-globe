@@ -85,7 +85,7 @@ Globe = function(container, opts) {
   var curZoomSpeed = 0;
   var zoomSpeed = 50;
 
-  var mouse = { x: 0, y: 0 }, mouseOnDown = { x: 0, y: 0 };
+  var mouse = { x: 0, y: 0 }, mouseOnDown = { x: 0, y: 0 }, touchOnDown = { x: 0, y: 0 } ;
   var rotation = { x: 0, y: 0 },
       target = { x: Math.PI*3/2, y: Math.PI / 6.0 },
       targetOnDown = { x: 0, y: 0 };
@@ -159,6 +159,7 @@ Globe = function(container, opts) {
     container.appendChild(renderer.domElement);
 
     // Event listeners
+    container.addEventListener('touchstart', onTouchDown, false);
     container.addEventListener('mousedown', onMouseDown, false);
     container.addEventListener('mousewheel', onMouseWheel, false);
     document.addEventListener('keydown', onDocumentKeyDown, false);
@@ -166,6 +167,10 @@ Globe = function(container, opts) {
 
     container.addEventListener('mouseover', function() {
       overRenderer = true;
+    }, false);
+
+   container.addEventListener('touchend', function() {
+     overRenderer = false;
     }, false);
 
     container.addEventListener('mouseout', function() {
@@ -292,6 +297,38 @@ Globe = function(container, opts) {
     targetOnDown.y = target.y;
 
     container.style.cursor = 'move';
+  }
+
+  function onTouchDown(event) {
+    event.preventDefault();
+
+    container.addEventListener('touchmove', onTouchMove, false);
+    container.addEventListener('touchend', onTouchEnd, false);
+    container.addEventListener('touchleave', onTouchEnd, false);
+    container.addEventListener('touchcancel', onTouchEnd, false);
+
+    touchOnDown.x = -event.touches[0].clientX;
+    touchOnDown.y = event.touches[0].clientY;
+
+    targetOnDown.x = target.x;
+    targetOnDown.y = target.y;
+  }
+
+  function onTouchMove(event) {
+    mouse.x = -event.touches[0].clientX;
+    mouse.y = event.touches[0].clientY;
+
+    var zoomDamp = distance/2000;
+
+    target.x = targetOnDown.x + (mouse.x - touchOnDown.x) * 0.005 * zoomDamp;
+    target.y = targetOnDown.y + (mouse.y - touchOnDown.y) * 0.005 * zoomDamp;
+
+    target.y = target.y > PI_HALF ? PI_HALF : target.y;
+    target.y = target.y < -PI_HALF ? -PI_HALF : target.y;
+  }
+
+  function onTouchEnd(event) {
+    container.removeEventListener('touchmove', onTouchMove, false);
   }
 
   function onMouseMove(event) {
