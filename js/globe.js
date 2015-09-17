@@ -2,6 +2,7 @@
  * dat.globe Javascript WebGL Globe Toolkit
  * http://dataarts.github.com/dat.globe
  *
+ * Copyright 2015 Mattias Roback
  * Copyright 2011 Data Arts Team, Google Creative Lab
  *
  * Licensed under the Apache License, Version 2.0 (the 'License');
