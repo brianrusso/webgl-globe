@@ -202,7 +202,7 @@ Globe = function(container, opts) {
     for (i=0; i < array.length; i++) {
         var lat = array[i]
         var lng = array[i+1]
-        var amount = array[i+2]*5
+        var amount = array[i+2]
         var opts = {amount: amount};
         //console.log(array[i] + " " + array[i+1] + " " + array[i+2])
         if (amount > MIN_DATA_THRESHOLD) point_list.push({lat: lat, lng: lng, opts: opts});
