@@ -34,7 +34,8 @@ Globe = function(container, opts) {
   self.pointBaseGeometry = new THREE.BoxGeometry( self.pointSize, self.pointSize, 1 );
   // Sets geometry origin to bottom, makes z scaling only scale in an upwards direction
   self.pointBaseGeometry.applyMatrix( new THREE.Matrix4().makeTranslation( 0, 0, -0.5 ) );
-  self.pointBaseMaterial = new THREE.MeshBasicMaterial( { color: 0xffffff } );
+  self.pointBaseMaterial = new THREE.MeshBasicMaterial( { color: 0xffffff, transparent: true, opacity: 0.6 } );
+  //self.pointBaseMaterial = new THREE.MeshLambertMaterial( { color: 0xffffff, transparent: true, opacity: 0.6 } );
 
   var Shaders = {
     'earth' : {
@@ -310,10 +311,22 @@ Globe = function(container, opts) {
   // hide tiny values
     if(amount < 1) {
         var lightness = 0;
+    } else if(amount < 5) {
+        var lightness = 0.1;
+    } else if (amount < 20) {
+        var lightness = 0.25;
     } else {
         var lightness = 0.5;
     }
-    var hue = ((1 - amount/self.maxHeight) * 0.7 )
+    //var lightness = amount * 0.4 / self.maxHeight
+    var lightness = 0.5;
+    //console.log(lightness)
+    var opacity = amount * 0.7 / self.maxHeight
+    //lightness = 0.4
+    //console.log(lightness)
+    var hue = ((1 - amount/self.maxHeight) * 0.8 )
+    point.mesh.material.opacity = opacity;
+    //console.log(opacity)
     point.mesh.material.color.setHSL(hue, 1, lightness);
   }
 
@@ -327,7 +340,8 @@ Globe = function(container, opts) {
     return new TWEEN.Tween(point.mesh.scale)
     .to({ z: heightTo }, TWEEN_SPEED)
     //.to({ z: heightTo }, heightTo * 1000/opts.heightIncreaseSpeed)
-    .easing(TWEEN.Easing.Linear.None)
+    //.easing(TWEEN.Easing.Linear.None)
+    .easing(TWEEN.Easing.Sinusoidal.In)
     .onUpdate(function() {
         setColour(point, this.z);
     })
@@ -457,7 +471,8 @@ Globe = function(container, opts) {
   }
 
   function getTotalRunningTime() {
-    return prevUpdateTime - pausedTime;
+    return prevUpdateTime;
+    //return prevUpdateTime - pausedTime;
   }
 
   function animate(time) {
@@ -465,10 +480,10 @@ Globe = function(container, opts) {
     prevUpdateTime = time;
 
     requestAnimationFrame(animate);
+    TWEEN.update(getTotalRunningTime());
     if (paused) {
-      pausedTime += delta;
+        // may want to add a pause button?
     } else {
-      TWEEN.update(getTotalRunningTime());
       rotateGlobe(delta / 1000);
     }
 
