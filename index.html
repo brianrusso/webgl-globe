@@ -55,6 +55,15 @@
         cursor: pointer;
       }
 
+      #random {
+        position: absolute;
+        bottom: 5px;
+        left: 100px;
+        padding: 10px;
+        cursor: pointer;
+      }
+
+
     </style>
   </head>
   <body>
@@ -62,14 +71,15 @@
   <div id="container"></div>
 
   <div id="info">
-    <strong><a href="https://github.com/roback/webgl-globe">github.com/roback/webgl-globe</a></strong>
+    <strong>the truth is out there</strong>
   </div>
 
   <div id="title">
-    Realtime Webgl Globe
+    Globe
   </div>
 
   <button id="pause-button">Pause</button>
+  <button id="random">Random Data</button>
 
   <script type="text/javascript" src="/js/third-party/Detector.js"></script>
   <script type="text/javascript" src="/js/third-party/three.min.js"></script>
@@ -85,19 +95,24 @@
       var globe = new Globe(container);
       var paused = false;
 
-      console.log(globe);
 
-      setInterval(function() {
-        if (paused) return;
-        var lat = Math.random() * 180 - 90;
-        var lng = Math.random() * 360 - 180;
-
-        globe.updatePoint(lat, lng, {amount: Math.random()*180+1});
-      }, 100);
 
       globe.start();
       //document.body.style.backgroundImage = 'none'; // remove loading
 
+      document.getElementById("random").onclick = function() {
+        var point_list = [];
+        for (i=0; i < 800; i++) {
+          var lat = Math.random() * 160 - 60;
+          var lng = Math.random() * 360 - 180;
+          //var lat = 20 + (Math.random() * 30);
+          //var lng = 150 + (Math.random() * 30);
+          amount = Math.random()
+          var opts = {amount: amount};
+          if (amount > 0.1) point_list.push({lat: lat, lng: lng, opts: opts});
+          }
+        globe.updatePoints(point_list);
+      };
       document.getElementById("pause-button").onclick = function() {
         paused = !paused;
         globe.togglePause();

@@ -22,14 +22,12 @@ Globe = function(container, opts) {
   self.mapImage = opts.mapImage || '/images/world.jpg';
 
   self.minHeight           = opts.minHeight           || 0.1;
-  self.maxHeight           = opts.maxHeight           || 180;
-  self.pointSize           = opts.pointSize           || 1;
-  self.maxAge              = opts.maxAge              || 10000;
-  self.ageDelay            = opts.ageDelay            || 1000;
-  self.heightDecreaseSpeed = opts.heightDecreaseSpeed || 10;
+  self.maxHeight           = opts.maxHeight           || 50;
+  self.pointSize           = opts.pointSize           || 3;
+  self.heightDecreaseSpeed = opts.heightDecreaseSpeed || 100;
   self.heightIncreaseSpeed = opts.heightIncreaseSpeed || 100;
-
-  self.rotationSpeed       = opts.rotationSpeed       || 1;
+ // 1 for nice speed
+  self.rotationSpeed       = opts.rotationSpeed       || 2;
 
   self.coordinatePrecision = opts.coordinatePrecision || 2;
 
@@ -37,14 +35,6 @@ Globe = function(container, opts) {
   // Sets geometry origin to bottom, makes z scaling only scale in an upwards direction
   self.pointBaseGeometry.applyMatrix( new THREE.Matrix4().makeTranslation( 0, 0, -0.5 ) );
   self.pointBaseMaterial = new THREE.MeshBasicMaterial( { color: 0xffffff } );
-
-  self.onPointAging = opts.onPointAging || function(point, percent) {
-    point.mesh.material.color.setHSL( percent/100 * 0.66, 1, 0.5);
-  };
-
-  self.onPointUpdated = opts.onPointUpdated || function(point) {
-    point.mesh.material.color.setHex(0xffffff);
-  };
 
   var Shaders = {
     'earth' : {
@@ -110,6 +100,7 @@ Globe = function(container, opts) {
 
   var prevUpdateTime = new Date().getTime();
 
+  var TWEEN_SPEED = 2000;
   var paused = false;
   var pausedTime = 0;
 
@@ -192,6 +183,11 @@ Globe = function(container, opts) {
     }, false);
   }
 
+  function deletePoints() {
+    self.points = {};
+  }
+  self.deletePoints = deletePoints;
+
   function roundCoord(coord) {
     return parseFloat(Math.round(coord).toFixed(self.coordinatePrecision));
   };
@@ -200,29 +196,60 @@ Globe = function(container, opts) {
     return lat + ":" + lng;
   };
 
+  function updatePoints(points) {
+    // first we figure out what all the new points are.
+    var new_points = {};
+    for (var i=0; i < points.length; i++) {
+
+        lat = roundCoord(points[i].lat);
+        lng = roundCoord(points[i].lng);
+        pointkey = createPointKey(lat, lng)
+        new_points[pointkey] = true;
+    }
+    // Then we iterate over existing points, see if any will be going away
+    for (var key in self.points) {
+        if(self.points.hasOwnProperty(key)) {
+            var pointwillstay = new_points[key]
+            if(pointwillstay) { // if this old key is in the new collection, do nothing
+            } else { // if this old key is NOT in the new collection, remove it
+                var pointToRemove = self.points[key]
+                // Remove it from our list of points
+                delete self.points[key]
+                // Tween it away.. then remove from scene
+                updateExistingPoint(pointToRemove, {amount: 0, delete: true})
+
+            }
+        }
+    }
+    for (var i=0; i < points.length; i++) {
+        self.updatePoint(points[i].lat, points[i].lng, points[i].opts)
+    }
+
+
+  }
+  self.updatePoints = updatePoints;
+
   function updatePoint(lat, lng, opts) {
     opts = opts || {};
 
     opts.amount              = opts.amount              || 1;
-    opts.maxAge              = opts.maxAge              || self.maxAge;
-    opts.ageDelay            = opts.ageDelay            || self.ageDelay;
     opts.heightDecreaseSpeed = opts.heightDecreaseSpeed || self.heightDecreaseSpeed;
     opts.heightIncreaseSpeed = opts.heightIncreaseSpeed || self.heightIncreaseSpeed;
 
     if (opts.amount > self.maxHeight)
       opts.amount = self.maxHeight;
 
-    opts.onPointAging   = opts.onPointAging   || self.onPointAging;
-    opts.onPointUpdated = opts.onPointUpdated || self.onPointUpdated;
 
     lat = roundCoord(lat);
     lng = roundCoord(lng);
 
     var pointKey      = createPointKey(lat, lng);
     var existingPoint = self.points[pointKey];
+    // update existing
     if (existingPoint) {
       updateExistingPoint(existingPoint, opts);
     } else {
+    // create new one
       self.points[pointKey] = createNewPoint(lat, lng, opts);
       updateExistingPoint(self.points[pointKey], opts);
     }
@@ -247,54 +274,54 @@ Globe = function(container, opts) {
       mesh: pointMesh,
     }
 
-    point.heightTween = createheightIncreaseTweenForPoint(point, opts);
+    point.heightTween = TweenPoint(point, opts);
     point.heightTween.start(getTotalRunningTime());
 
     return point;
   }
 
   function updateExistingPoint(point, opts) {
-    if (point.ageColorTween) point.ageColorTween.stop();
+
     point.heightTween.stop();
-    point.heightTween = createheightIncreaseTweenForPoint(point, opts);
+    // tween to new height
+    point.heightTween = TweenPoint(point, opts);
     point.heightTween.start(getTotalRunningTime());
 
-    opts.onPointUpdated(point);
   }
 
-  function createHeightDecreaseTweenForPoint(point, opts) {
-    return new TWEEN.Tween(point.mesh.scale)
-    .to({ z: self.minHeight }, point.mesh.scale.z * 1000/opts.heightDecreaseSpeed)
-    .easing(TWEEN.Easing.Quadratic.InOut);
+
+  function setColour(point, amount) {
+  // hide tiny values
+    if(amount < 1) {
+        var lightness = 0;
+    } else {
+        var lightness = 0.5;
+    }
+    var hue = ((1 - amount/self.maxHeight) * 0.7 )
+    point.mesh.material.color.setHSL(hue, 1, lightness);
   }
 
-  function createAgeTweenForPoint(point, opts) {
-    return new TWEEN.Tween({ percent: 0 })
-    .to({ percent: 100 }, opts.maxAge)
-    .easing(TWEEN.Easing.Quadratic.InOut)
-    .onUpdate(function() {
-      opts.onPointAging(point, this.percent);
-    });
-  }
 
-  function createheightIncreaseTweenForPoint(point, opts) {
-    var heightTo = point.mesh.scale.z + opts.amount;
+  function TweenPoint(point, opts) {
+    var heightTo = opts.amount * self.maxHeight;
     if (heightTo >= self.maxHeight) {
       heightTo = self.maxHeight;
     }
 
     return new TWEEN.Tween(point.mesh.scale)
-    .to({ z: heightTo }, heightTo * 1000/opts.heightIncreaseSpeed)
+    .to({ z: heightTo }, TWEEN_SPEED)
+    //.to({ z: heightTo }, heightTo * 1000/opts.heightIncreaseSpeed)
     .easing(TWEEN.Easing.Linear.None)
+    .onUpdate(function() {
+        setColour(point, this.z);
+    })
+    // Delete the point after we tween it away (if delete is set)
     .onComplete(function() {
-      point.heightTween = createHeightDecreaseTweenForPoint(point, opts);
-      point.heightTween.delay(self.ageDelay);
-      point.heightTween.start(getTotalRunningTime());
-
-      point.ageColorTween = createAgeTweenForPoint(point, opts);
-      point.ageColorTween.delay(self.ageDelay);
-      point.ageColorTween.start(getTotalRunningTime());
+        if(opts.delete) {
+            scene.remove(point.mesh);
+        }
     });
+
   }
 
   function onMouseDown(event) {
