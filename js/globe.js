@@ -101,6 +101,7 @@ Globe = function(container, opts) {
   var prevUpdateTime = new Date().getTime();
 
   var TWEEN_SPEED = 2000;
+  var MIN_DATA_THRESHOLD = 0.1;
   var paused = false;
   var pausedTime = 0;
 
@@ -195,6 +196,21 @@ Globe = function(container, opts) {
   function createPointKey(lat, lng){
     return lat + ":" + lng;
   };
+
+  function loadArray(array) {
+    var point_list = []
+    for (i=0; i < array.length; i++) {
+        var lat = array[i]
+        var lng = array[i+1]
+        var amount = array[i+2]*5
+        var opts = {amount: amount};
+        //console.log(array[i] + " " + array[i+1] + " " + array[i+2])
+        if (amount > MIN_DATA_THRESHOLD) point_list.push({lat: lat, lng: lng, opts: opts});
+        i = i + 2
+    }
+    self.updatePoints(point_list);
+  }
+ self.loadArray = loadArray;
 
   function updatePoints(points) {
     // first we figure out what all the new points are.
