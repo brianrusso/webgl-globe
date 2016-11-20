@@ -84,7 +84,28 @@
         padding: 10px;
         cursor: pointer;
       }
+      #look {
+        position: absolute;
+        bottom: 5px;
+        left: 380px;
+        padding: 10px;
+        cursor: pointer;
+      }
 
+      #ukraine {
+        position: absolute;
+        bottom: 5px;
+        left: 450px;
+        padding: 10px;
+        cursor: pointer;
+      }
+      #scs {
+        position: absolute;
+        bottom: 5px;
+        left: 550px;
+        padding: 10px;
+        cursor: pointer;
+      }
 
     </style>
   </head>
@@ -105,6 +126,8 @@
   <button id="b1990">1990</button>
   <button id="b1995">1995</button>
   <button id="b2000">2000</button>
+  <button id="ukraine">Ukraine</button>
+  <button id="scs">SCS</button>
 
   <script type="text/javascript" src="/js/third-party/Detector.js"></script>
   <script type="text/javascript" src="/js/third-party/three.min.js"></script>
@@ -157,8 +180,12 @@ var data = {"1990": [6,159,0.001,30,99,0.002,45,-109,0.000,42,115,0.007,4,-54,0.
         globe.loadArray(data['2000']);
       };
 
-
-
+      document.getElementById("ukraine").onclick = function() {
+        globe.lookAt(46, 34, 500);
+      };
+      document.getElementById("scs").onclick = function() {
+        globe.lookAt(20, 120, 500);
+      };
 
 
     }

@@ -19,7 +19,7 @@ Globe = function(container, opts) {
 
   opts = opts || {};
 
-  self.mapImage = opts.mapImage || '/images/world.jpg';
+  self.mapImage = opts.mapImage || '/images/world-color.jpg';
 
   self.minHeight           = opts.minHeight           || 0.1;
   self.maxHeight           = opts.maxHeight           || 50;
@@ -118,10 +118,12 @@ Globe = function(container, opts) {
     camera = new THREE.PerspectiveCamera(30, w / h, 1, 10000);
     camera.position.z = distance;
 
+
     scene = new THREE.Scene();
 
     // Globe
-    var globeGeometry = new THREE.SphereGeometry(200, 40, 30);
+    // 60 width/height segments
+    var globeGeometry = new THREE.SphereGeometry(200, 60, 60);
 
     shader   = Shaders['earth'];
     uniforms = THREE.UniformsUtils.clone(shader.uniforms);
@@ -308,25 +310,12 @@ Globe = function(container, opts) {
 
 
   function setColour(point, amount) {
-  // hide tiny values
-    if(amount < 1) {
-        var lightness = 0;
-    } else if(amount < 5) {
-        var lightness = 0.1;
-    } else if (amount < 20) {
-        var lightness = 0.25;
-    } else {
-        var lightness = 0.5;
-    }
-    //var lightness = amount * 0.4 / self.maxHeight
     var lightness = 0.5;
-    //console.log(lightness)
-    var opacity = amount * 0.7 / self.maxHeight
-    //lightness = 0.4
-    //console.log(lightness)
+    var opacity = amount * 1 / self.maxHeight
     var hue = ((1 - amount/self.maxHeight) * 0.8 )
     point.mesh.material.opacity = opacity;
-    //console.log(opacity)
+    //point.mesh.material.wireframe = true;
+    point.mesh.material.depthTest = true;
     point.mesh.material.color.setHSL(hue, 1, lightness);
   }
 
@@ -413,6 +402,7 @@ Globe = function(container, opts) {
 
     target.y = target.y > PI_HALF ? PI_HALF : target.y;
     target.y = target.y < - PI_HALF ? - PI_HALF : target.y;
+
   }
 
   function onMouseUp(event) {
@@ -470,6 +460,16 @@ Globe = function(container, opts) {
     }
   }
 
+  function lookAt(lat, lng, height) {
+    paused = true;
+    distanceTarget = height;
+    // determined empircally... can't be bothered to figure out this magic number now
+    target.x = (lng+270)/57.3;
+    target.y = lat/60;
+    render();
+  }
+  self.lookAt = lookAt;
+
   function getTotalRunningTime() {
     return prevUpdateTime;
     //return prevUpdateTime - pausedTime;
@@ -496,7 +496,7 @@ Globe = function(container, opts) {
     rotation.x += (target.x - rotation.x) * 0.1;
     rotation.y += (target.y - rotation.y) * 0.1;
     distance += (distanceTarget - distance) * 0.3;
-
+    //console.log(camera.position);
     camera.position.x = distance * Math.sin(rotation.x) * Math.cos(rotation.y);
     camera.position.y = distance * Math.sin(rotation.y);
     camera.position.z = distance * Math.cos(rotation.x) * Math.cos(rotation.y);
